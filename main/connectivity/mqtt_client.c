@@ -278,7 +278,7 @@ esp_err_t mqtt_client_publish_alert(alert_type_t alert_type, const char *message
     snprintf(topic, sizeof(topic), "poultry/%s/alerts", mqtt_config.client_id);
     
     return mqtt_client_publish(topic, json_buffer, strlen(json_buffer), 
-                              mqtt_config.qos, true);
+                              mqtt_config.qos, false);
 }
 
 esp_err_t mqtt_client_set_config(const mqtt_config_t *config) {

@@ -3,6 +3,7 @@
 #include "sensors/sensor_manager.h"
 #include "sensors/gas_sensor.h"
 #include "actuators/actuator_manager.h"
+#include "actuators/buzzer_control.h"
 #include "control/climate_control.h"
 #include "control/feeding_schedule.h"
 #include "control/lighting_schedule.h"
@@ -15,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_task_wdt.h"
+#include "esp_sntp.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "freertos/FreeRTOS.h"
@@ -22,6 +24,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include <string.h>
+#include <time.h>
 
 static const char *TAG = "APP_MAIN";
 
@@ -180,35 +183,85 @@ static void sensor_task(void *pvParameters) {
     }
 }
 
+static void time_sync_notification_cb(struct timeval *tv) {
+    ESP_LOGI(TAG, "Time synchronized: %s", asctime(localtime(&tv->tv_sec)));
+}
+
+static void init_sntp(void) {
+    setenv("TZ", "UTC0", 1);
+    tzset();
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+    sntp_init();
+    
+    time_t now = 0;
+    struct tm timeinfo = {0};
+    int retry = 0;
+    const int retry_count = 10;
+    while (timeinfo.tm_year < (2024 - 1900) && ++retry < retry_count) {
+        ESP_LOGI(TAG, "Waiting for system time (attempt %d/%d)...", retry, retry_count);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        time(&now);
+        localtime_r(&now, &timeinfo);
+    }
+    
+    if (timeinfo.tm_year >= (2024 - 1900)) {
+        ESP_LOGI(TAG, "System time synchronized");
+    } else {
+        ESP_LOGW(TAG, "Failed to sync time, using boot time");
+    }
+}
+
 static void control_task(void *pvParameters) {
     ESP_LOGI(TAG, "Control task started");
     
     sensor_data_t sensor_data;
     actuator_states_t actuator_states;
     TickType_t last_wake_time = xTaskGetTickCount();
+    uint8_t last_feed_hour = 255;
+    uint8_t last_light_hour = 255;
     
     while (1) {
         if (xQueueReceive(sensor_data_queue, &sensor_data, pdMS_TO_TICKS(1000)) == pdTRUE) {
-            climate_control_update(&sensor_data, &actuator_states);
-            
-            uint64_t now_us = esp_timer_get_time();
-            uint64_t epoch_seconds = 1743638400ULL + (now_us / 1000000ULL);
-            uint8_t current_hour = (epoch_seconds / 3600) % 24;
-            uint8_t current_minute = (epoch_seconds / 60) % 60;
-            uint8_t feed_amount = 0;
-            
-            if (feeding_schedule_is_due(current_hour, current_minute, &feed_amount)) {
-                ESP_LOGI(TAG, "Feeding due: %d grams", feed_amount);
-                feeding_schedule_execute(feed_amount);
+            if (system_config.operating_mode == MODE_MAINTENANCE) {
+                actuator_manager_emergency_stop();
+                vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(CONTROL_LOOP_INTERVAL_MS));
+                continue;
             }
             
-            uint8_t light_intensity = 0;
-            if (lighting_schedule_is_due(current_hour, current_minute, &light_intensity)) {
-                ESP_LOGI(TAG, "Lighting change due: %d%%", light_intensity);
-                lighting_schedule_execute(light_intensity);
+            climate_control_update(&sensor_data, &actuator_states);
+            
+            time_t now;
+            time(&now);
+            struct tm timeinfo;
+            localtime_r(&now, &timeinfo);
+            uint8_t current_hour = timeinfo.tm_hour;
+            uint8_t current_minute = timeinfo.tm_min;
+            
+            if (system_config.operating_mode != MODE_MANUAL) {
+                uint8_t feed_amount = 0;
+                if (feeding_schedule_is_due(current_hour, current_minute, &feed_amount) && current_hour != last_feed_hour) {
+                    ESP_LOGI(TAG, "Feeding due: %d grams", feed_amount);
+                    feeding_schedule_execute(feed_amount);
+                    last_feed_hour = current_hour;
+                }
+                
+                uint8_t light_intensity = 0;
+                if (lighting_schedule_is_due(current_hour, current_minute, &light_intensity) && current_hour != last_light_hour) {
+                    ESP_LOGI(TAG, "Lighting change due: %d%%", light_intensity);
+                    lighting_schedule_execute(light_intensity);
+                    last_light_hour = current_hour;
+                }
             }
             
             alert_system_check(&sensor_data);
+            
+            if (system_config.operating_mode != MODE_MANUAL) {
+                gas_leak_event_t gas_event;
+                gas_leak_detector_check(&gas_event);
+            }
+            
             actuator_manager_set_states(&actuator_states);
             
             if (system_status_mutex != NULL && xSemaphoreTake(system_status_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
@@ -370,26 +423,23 @@ static esp_err_t init_subsystems(void) {
     }
     ESP_LOGI(TAG, "Sensor manager initialized");
     
-    gas_sensor_config_t gas_config = {
-        .adc_channel = GAS_SENSOR_ADC_CHANNEL,
-        .alarm_threshold = GAS_LEAK_THRESHOLD_PPM,
-        .danger_threshold = GAS_DANGER_THRESHOLD_PPM,
-        .calibration_factor = 1.0f,
-        .calibration_offset = 0.0f
-    };
-    ret = gas_sensor_init(&gas_config);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize gas sensor");
-        return ret;
-    }
-    ESP_LOGI(TAG, "Gas sensor initialized");
-    
     ret = actuator_manager_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize actuator manager");
         return ret;
     }
     ESP_LOGI(TAG, "Actuator manager initialized");
+    
+    buzzer_config_t buzzer_cfg = {
+        .gpio_num = ALARM_GPIO,
+        .active_high = true,
+        .frequency_hz = 2000,
+        .duty_cycle = 50
+    };
+    ret = buzzer_control_init(&buzzer_cfg);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to initialize buzzer (non-critical)");
+    }
     
     climate_config_t climate_cfg = {
         .temp_setpoint = system_config.temp_setpoint,
@@ -639,6 +689,7 @@ void app_main(void) {
     ESP_LOGI(TAG, "Connecting to WiFi...");
     if (wifi_manager_connect() == ESP_OK) {
         ESP_LOGI(TAG, "WiFi connected successfully");
+        init_sntp();
         
         if (system_config.mqtt_enabled) {
             ESP_LOGI(TAG, "Connecting to MQTT broker...");

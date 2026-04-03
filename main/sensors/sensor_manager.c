@@ -21,6 +21,8 @@ static const char *TAG = "SENSOR_MGR";
 #define SENSOR_GAS_OK           (1 << 6)
 
 static uint8_t sensor_health = 0;
+static uint8_t sensor_failure_count[7] = {0};
+#define SENSOR_FAILURE_THRESHOLD 5
 static bool initialized = false;
 
 esp_err_t sensor_manager_init(void) {
@@ -168,60 +170,90 @@ esp_err_t sensor_manager_read_all(sensor_data_t *data) {
             data->temperature = dht_data.temperature;
             data->humidity = dht_data.humidity;
             successful_reads++;
+            sensor_failure_count[0] = 0;
         } else {
             ESP_LOGW(TAG, "DHT22 read failed");
-            sensor_health &= ~SENSOR_DHT22_OK;
+            sensor_failure_count[0]++;
+            if (sensor_failure_count[0] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_DHT22_OK;
+            }
             failed_sensors++;
+        }
+    } else {
+        if (dht22_read(&dht_data) == ESP_OK && dht_data.valid) {
+            sensor_health |= SENSOR_DHT22_OK;
+            sensor_failure_count[0] = 0;
+            ESP_LOGI(TAG, "DHT22 recovered");
         }
     }
     
     if (sensor_health & SENSOR_AMMONIA_OK) {
         if (ammonia_sensor_read(&data->ammonia_ppm) != ESP_OK) {
             ESP_LOGW(TAG, "Ammonia sensor read failed");
-            sensor_health &= ~SENSOR_AMMONIA_OK;
+            sensor_failure_count[1]++;
+            if (sensor_failure_count[1] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_AMMONIA_OK;
+            }
             failed_sensors++;
         } else {
             successful_reads++;
+            sensor_failure_count[1] = 0;
         }
     }
     
     if (sensor_health & SENSOR_CO2_OK) {
         if (co2_sensor_read(&data->co2_ppm) != ESP_OK) {
             ESP_LOGW(TAG, "CO2 sensor read failed");
-            sensor_health &= ~SENSOR_CO2_OK;
+            sensor_failure_count[2]++;
+            if (sensor_failure_count[2] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_CO2_OK;
+            }
             failed_sensors++;
         } else {
             successful_reads++;
+            sensor_failure_count[2] = 0;
         }
     }
     
     if (sensor_health & SENSOR_LIGHT_OK) {
         if (light_sensor_read(&data->light_lux) != ESP_OK) {
             ESP_LOGW(TAG, "Light sensor read failed");
-            sensor_health &= ~SENSOR_LIGHT_OK;
+            sensor_failure_count[3]++;
+            if (sensor_failure_count[3] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_LIGHT_OK;
+            }
             failed_sensors++;
         } else {
             successful_reads++;
+            sensor_failure_count[3] = 0;
         }
     }
     
     if (sensor_health & SENSOR_WATER_OK) {
         if (water_level_sensor_read(&data->water_level_percent) != ESP_OK) {
             ESP_LOGW(TAG, "Water level sensor read failed");
-            sensor_health &= ~SENSOR_WATER_OK;
+            sensor_failure_count[4]++;
+            if (sensor_failure_count[4] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_WATER_OK;
+            }
             failed_sensors++;
         } else {
             successful_reads++;
+            sensor_failure_count[4] = 0;
         }
     }
     
     if (sensor_health & SENSOR_FEED_OK) {
         if (feed_level_sensor_read(&data->feed_level_percent) != ESP_OK) {
             ESP_LOGW(TAG, "Feed level sensor read failed");
-            sensor_health &= ~SENSOR_FEED_OK;
+            sensor_failure_count[5]++;
+            if (sensor_failure_count[5] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_FEED_OK;
+            }
             failed_sensors++;
         } else {
             successful_reads++;
+            sensor_failure_count[5] = 0;
         }
     }
     
@@ -231,9 +263,13 @@ esp_err_t sensor_manager_read_all(sensor_data_t *data) {
             data->gas_ppm = gas_data.concentration_ppm;
             data->gas_alarm = gas_data.alarm_triggered;
             successful_reads++;
+            sensor_failure_count[6] = 0;
         } else {
             ESP_LOGW(TAG, "Gas sensor read failed");
-            sensor_health &= ~SENSOR_GAS_OK;
+            sensor_failure_count[6]++;
+            if (sensor_failure_count[6] >= SENSOR_FAILURE_THRESHOLD) {
+                sensor_health &= ~SENSOR_GAS_OK;
+            }
             failed_sensors++;
         }
     }
@@ -327,7 +363,8 @@ bool sensor_manager_check_all_connected(void) {
         return false;
     }
     
-    return (sensor_health != 0);
+    return (sensor_health == (SENSOR_DHT22_OK | SENSOR_AMMONIA_OK | SENSOR_CO2_OK |
+                              SENSOR_LIGHT_OK | SENSOR_WATER_OK | SENSOR_FEED_OK | SENSOR_GAS_OK));
 }
 
 esp_err_t sensor_manager_get_health(uint8_t *sensor_mask) {

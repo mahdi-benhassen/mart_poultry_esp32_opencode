@@ -265,7 +265,7 @@ static esp_err_t sensors_get_handler(httpd_req_t *req) {
     int len = snprintf(response, sizeof(response),
         "{\"temperature\":%.2f,\"humidity\":%.2f,\"ammonia_ppm\":%.2f,\"co2_ppm\":%.2f,"
         "\"light_lux\":%.2f,\"water_level_percent\":%.2f,\"feed_level_percent\":%.2f,"
-        "\"gas_ppm\":%.2f,\"gas_alarm\":%s,\"timestamp\":%lu,\"valid\":%s}",
+        "\"gas_ppm\":%.2f,\"gas_alarm\":%s,\"timestamp\":%u,\"valid\":%s}",
         cached_sensor_data.temperature,
         cached_sensor_data.humidity,
         cached_sensor_data.ammonia_ppm,
@@ -275,9 +275,14 @@ static esp_err_t sensors_get_handler(httpd_req_t *req) {
         cached_sensor_data.feed_level_percent,
         cached_sensor_data.gas_ppm,
         cached_sensor_data.gas_alarm ? "true" : "false",
-        (unsigned long)cached_sensor_data.timestamp,
+        (unsigned)cached_sensor_data.timestamp,
         cached_sensor_data.valid ? "true" : "false"
     );
+    
+    if (len < 0 || (size_t)len >= sizeof(response)) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
     
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, response, len);

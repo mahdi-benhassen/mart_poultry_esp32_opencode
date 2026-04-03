@@ -225,12 +225,10 @@ esp_err_t climate_control_get_status(char *status, size_t max_len) {
     }
     
     snprintf(status, max_len, 
-             "Temp: %.1f°C (SP: %.1f°C), Humidity: %.1f%% (SP: %.1f%%), "
-             "NH3: %.1fppm (Limit: %.1fppm), CO2: %.1fppm (Limit: %.1fppm)",
-             temp_pid_state.output, climate_config.temp_setpoint,
-             humidity_pid_state.output, climate_config.humidity_setpoint,
-             ventilation_pid_state.output, climate_config.ammonia_limit,
-             0.0f, climate_config.co2_limit);
+             "Temp SP: %.1f°C, Humidity SP: %.1f%%, "
+             "NH3 Limit: %.1fppm, CO2 Limit: %.1fppm",
+             climate_config.temp_setpoint, climate_config.humidity_setpoint,
+             climate_config.ammonia_limit, climate_config.co2_limit);
     
     return ESP_OK;
 }

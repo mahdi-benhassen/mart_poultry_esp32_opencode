@@ -124,7 +124,7 @@ esp_err_t heater_control_set_limit(float max_temp) {
         return ESP_ERR_INVALID_STATE;
     }
     
-    if (max_temp < 0 || max_temp > 100) {
+    if (max_temp < 0 || max_temp > 150) {
         return ESP_ERR_INVALID_ARG;
     }
     
