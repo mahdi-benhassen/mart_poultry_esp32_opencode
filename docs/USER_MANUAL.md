@@ -355,7 +355,7 @@ I (xxx) APP_MAIN: ========================================
 
 ### WiFi Configuration
 
-Edit `main/app_main.c` and update lines 203-204:
+Edit `main/app_main.c` and update the WiFi configuration section:
 
 ```c
 // WiFi configuration
@@ -370,7 +370,7 @@ idf.py build flash
 
 ### MQTT Configuration
 
-Update lines 207-211 in `main/app_main.c`:
+Update the MQTT configuration section in `main/app_main.c`:
 
 ```c
 // MQTT configuration
@@ -383,7 +383,7 @@ strncpy(system_config.mqtt_client_id, "poultry_001", MQTT_CLIENT_ID_MAX_LEN - 1)
 
 ### Control Setpoints
 
-Update lines 214-217:
+Update the control setpoints section in `main/app_main.c`:
 
 ```c
 // Control setpoints
@@ -395,7 +395,7 @@ system_config.co2_limit = 3000.0f;        // CO2 limit (ppm)
 
 ### Feeding Schedule
 
-Update lines 226-237:
+Update the feeding schedule section in `main/app_main.c`:
 
 ```c
 // Feeding schedule (grams per hour)
@@ -415,7 +415,7 @@ system_config.feeding_schedule[19] = 20;  // 7 PM: 20g
 
 ### Lighting Schedule
 
-Update lines 240-248:
+Update the lighting schedule section in `main/app_main.c`:
 
 ```c
 // Lighting schedule (intensity per hour, 0-100%)
@@ -526,12 +526,10 @@ curl http://<ESP32_IP>/api/status
 Response:
 ```json
 {
-  "state": "NORMAL",
+  "state": 1,
+  "active_alert": 0,
   "uptime_seconds": 86400,
-  "free_heap_size": 200000,
-  "active_alert": "NONE",
-  "wifi_connected": true,
-  "mqtt_connected": true
+  "free_heap_size": 200000
 }
 ```
 
@@ -731,10 +729,8 @@ mosquitto_pub -h broker.hivemq.com -t "poultry/esp32_001/config" -m '{
 
 #### Via Serial Monitor
 ```
-mode automatic
-mode manual
-mode scheduled
-mode maintenance
+The system outputs status information via ESP_LOG on the serial port.
+Use `idf.py monitor` to view system logs.
 ```
 
 ---
@@ -912,7 +908,7 @@ The feeding schedule controls when and how much feed is dispensed.
 
 #### Modifying Schedule
 
-Edit `main/app_main.c` lines 226-237:
+Edit the feeding schedule section in `main/app_main.c`:
 
 ```c
 // Feeding schedule (grams per hour)
@@ -941,7 +937,7 @@ The lighting schedule controls light intensity throughout the day.
 
 #### Modifying Schedule
 
-Edit `main/app_main.c` lines 240-248:
+Edit the lighting schedule section in `main/app_main.c`:
 
 ```c
 // Lighting schedule (intensity per hour, 0-100%)

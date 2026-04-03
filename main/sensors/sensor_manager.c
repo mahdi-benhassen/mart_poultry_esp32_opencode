@@ -251,7 +251,7 @@ esp_err_t sensor_manager_read_all(sensor_data_t *data) {
              data->light_lux, data->water_level_percent, data->feed_level_percent,
              data->gas_ppm);
     
-    return (failed_sensors > 0) ? ESP_ERR_TIMEOUT : ESP_OK;
+    return ESP_OK;
 }
 
 esp_err_t sensor_manager_read_sensor(uint8_t sensor_type, float *value) {

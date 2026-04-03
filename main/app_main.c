@@ -106,11 +106,16 @@ static esp_err_t load_config_from_nvs(void) {
     nvs_get_str(nvs_handle, "mqtt_username", system_config.mqtt_username, &username_len);
     nvs_get_str(nvs_handle, "mqtt_password", system_config.mqtt_password, &password_len);
     nvs_get_str(nvs_handle, "mqtt_client_id", system_config.mqtt_client_id, &client_id_len);
-    float temp_raw = 0, humidity_raw = 0;
-    nvs_get_u32(nvs_handle, "temp_setpoint_raw", (uint32_t*)&temp_raw);
-    nvs_get_u32(nvs_handle, "humidity_setpoint_raw", (uint32_t*)&humidity_raw);
-    if (temp_raw != 0) system_config.temp_setpoint = temp_raw;
-    if (humidity_raw != 0) system_config.humidity_setpoint = humidity_raw;
+    uint32_t temp_raw = 0, humidity_raw = 0;
+    size_t temp_size = sizeof(temp_raw), humidity_size = sizeof(humidity_raw);
+    esp_err_t temp_ret = nvs_get_u32(nvs_handle, "temp_setpoint_raw", &temp_raw);
+    esp_err_t hum_ret = nvs_get_u32(nvs_handle, "humidity_setpoint_raw", &humidity_raw);
+    if (temp_ret == ESP_OK && temp_raw != 0) {
+        memcpy(&system_config.temp_setpoint, &temp_raw, sizeof(float));
+    }
+    if (hum_ret == ESP_OK && humidity_raw != 0) {
+        memcpy(&system_config.humidity_setpoint, &humidity_raw, sizeof(float));
+    }
     
     nvs_close(nvs_handle);
     ESP_LOGI(TAG, "Configuration loaded from NVS");
@@ -133,8 +138,11 @@ static esp_err_t save_config_to_nvs(void) {
     nvs_set_str(nvs_handle, "mqtt_username", system_config.mqtt_username);
     nvs_set_str(nvs_handle, "mqtt_password", system_config.mqtt_password);
     nvs_set_str(nvs_handle, "mqtt_client_id", system_config.mqtt_client_id);
-    nvs_set_u32(nvs_handle, "temp_setpoint_raw", *(uint32_t*)&system_config.temp_setpoint);
-    nvs_set_u32(nvs_handle, "humidity_setpoint_raw", *(uint32_t*)&system_config.humidity_setpoint);
+    uint32_t temp_raw, humidity_raw;
+    memcpy(&temp_raw, &system_config.temp_setpoint, sizeof(float));
+    memcpy(&humidity_raw, &system_config.humidity_setpoint, sizeof(float));
+    nvs_set_u32(nvs_handle, "temp_setpoint_raw", temp_raw);
+    nvs_set_u32(nvs_handle, "humidity_setpoint_raw", humidity_raw);
     
     err = nvs_commit(nvs_handle);
     nvs_close(nvs_handle);
@@ -183,8 +191,10 @@ static void control_task(void *pvParameters) {
         if (xQueueReceive(sensor_data_queue, &sensor_data, pdMS_TO_TICKS(1000)) == pdTRUE) {
             climate_control_update(&sensor_data, &actuator_states);
             
-            uint8_t current_hour = (esp_timer_get_time() / 3600000000) % 24;
-            uint8_t current_minute = (esp_timer_get_time() / 60000000) % 60;
+            uint64_t now_us = esp_timer_get_time();
+            uint64_t epoch_seconds = 1743638400ULL + (now_us / 1000000ULL);
+            uint8_t current_hour = (epoch_seconds / 3600) % 24;
+            uint8_t current_minute = (epoch_seconds / 60) % 60;
             uint8_t feed_amount = 0;
             
             if (feeding_schedule_is_due(current_hour, current_minute, &feed_amount)) {
@@ -661,8 +671,11 @@ void app_main(void) {
     ESP_LOGI(TAG, "========================================");
     
     while (1) {
-        system_status.uptime_seconds = esp_timer_get_time() / 1000000;
-        system_status.free_heap_size = esp_get_free_heap_size();
+        if (system_status_mutex != NULL && xSemaphoreTake(system_status_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            system_status.uptime_seconds = esp_timer_get_time() / 1000000;
+            system_status.free_heap_size = esp_get_free_heap_size();
+            xSemaphoreGive(system_status_mutex);
+        }
         
         vTaskDelay(pdMS_TO_TICKS(10000));
     }

@@ -90,7 +90,8 @@ esp_err_t lighting_schedule_get_current(uint8_t *intensity) {
     }
     
     uint64_t now_us = esp_timer_get_time();
-    uint8_t current_hour = (now_us / 3600000000ULL) % 24;
+    uint64_t epoch_seconds = 1743638400ULL + (now_us / 1000000ULL);
+    uint8_t current_hour = (epoch_seconds / 3600) % 24;
     
     *intensity = lighting_schedule[current_hour];
     return ESP_OK;

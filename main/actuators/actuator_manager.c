@@ -127,7 +127,7 @@ esp_err_t actuator_manager_init(void) {
     ventilation_config_t vent_cfg = {
         .servo_gpio = VENTILATION_SERVO_GPIO,
         .pwm_channel = VENTILATION_PWM_CHANNEL,
-        .pwm_timer = LEDC_TIMER_2,
+        .pwm_timer = VENTILATION_PWM_TIMER,
         .pwm_frequency = 50,
         .pwm_resolution = LEDC_TIMER_16_BIT,
         .min_pulse_us = 500,

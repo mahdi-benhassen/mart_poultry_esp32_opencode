@@ -17,6 +17,7 @@ idf_component_register(
         "actuators/lighting_control.c"
         "actuators/ventilation_control.c"
         "actuators/buzzer_control.c"
+        "actuators/buzzer_control.c"
         "control/pid_controller.c"
         "control/climate_control.c"
         "control/feeding_schedule.c"

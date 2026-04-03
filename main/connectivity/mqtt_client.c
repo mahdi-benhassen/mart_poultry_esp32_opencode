@@ -257,11 +257,24 @@ esp_err_t mqtt_client_publish_alert(alert_type_t alert_type, const char *message
         return ESP_ERR_INVALID_ARG;
     }
     
-    // Create JSON payload
+    char escaped_message[256];
+    size_t j = 0;
+    for (size_t i = 0; message[i] != '\0' && j < sizeof(escaped_message) - 1; i++) {
+        if (message[i] == '"' || message[i] == '\\') {
+            if (j < sizeof(escaped_message) - 2) {
+                escaped_message[j++] = '\\';
+            }
+        }
+        if (message[i] >= 0x20 || message[i] == '\n' || message[i] == '\r' || message[i] == '\t') {
+            escaped_message[j++] = message[i];
+        }
+    }
+    escaped_message[j] = '\0';
+    
     char json_buffer[256];
     snprintf(json_buffer, sizeof(json_buffer),
              "{\"alert_type\":%u,\"message\":\"%s\",\"timestamp\":%u}",
-             alert_type, message, esp_timer_get_time() / 1000000);
+             alert_type, escaped_message, (uint32_t)(esp_timer_get_time() / 1000000));
     
     // Publish to alerts topic
     char topic[64];

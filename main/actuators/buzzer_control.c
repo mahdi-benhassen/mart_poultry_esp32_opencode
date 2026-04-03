@@ -99,6 +99,17 @@ static void buzzer_pattern_task(void *pvParameters) {
     vTaskDelete(NULL);
 }
 
+static void buzzer_alarm_stop_internal(void) {
+    buzzer_state.is_active = false;
+    if (buzzer_task_handle != NULL) {
+        TaskHandle_t task = buzzer_task_handle;
+        buzzer_task_handle = NULL;
+        vTaskDelete(task);
+    }
+    gpio_set_level(buzzer_config.gpio_num, 
+                  buzzer_config.active_high ? 0 : 1);
+}
+
 esp_err_t buzzer_control_init(const buzzer_config_t *config) {
     if (config == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -149,8 +160,7 @@ esp_err_t buzzer_alarm_start(buzzer_pattern_t pattern, uint32_t duration_ms, uin
     
     // Stop any existing alarm
     if (buzzer_state.is_active) {
-        buzzer_alarm_stop();
-        vTaskDelay(pdMS_TO_TICKS(100)); // Wait for task to stop
+        buzzer_alarm_stop_internal();
     }
     
     // Set alarm state
@@ -193,22 +203,16 @@ esp_err_t buzzer_alarm_stop(void) {
     
     ESP_LOGI(TAG, "Stopping buzzer alarm");
     
-    // Set flag to stop task
+    TaskHandle_t task_to_delete = NULL;
+    
     buzzer_state.is_active = false;
     
-    // Wait for task to finish
     if (buzzer_task_handle != NULL) {
-        // Give task time to exit
-        vTaskDelay(pdMS_TO_TICKS(200));
-        
-        // Force delete if still running
-        if (buzzer_task_handle != NULL) {
-            vTaskDelete(buzzer_task_handle);
-            buzzer_task_handle = NULL;
-        }
+        task_to_delete = buzzer_task_handle;
+        buzzer_task_handle = NULL;
+        vTaskDelete(task_to_delete);
     }
     
-    // Ensure buzzer is off
     gpio_set_level(buzzer_config.gpio_num, 
                   buzzer_config.active_high ? 0 : 1);
     

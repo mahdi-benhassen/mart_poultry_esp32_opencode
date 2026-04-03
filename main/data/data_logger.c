@@ -8,12 +8,13 @@
 
 static const char *TAG = "DATA_LOGGER";
 
-#define MAX_LOG_ENTRIES 1000
+#define MAX_LOG_ENTRIES 100
 #define NVS_LOG_NAMESPACE "data_log"
 
 static data_logger_config_t logger_config = {0};
 static log_entry_t log_entries[MAX_LOG_ENTRIES] = {0};
 static size_t log_count = 0;
+static size_t write_index = 0;
 static bool initialized = false;
 static nvs_handle_t nvs_handle;
 
@@ -35,16 +36,8 @@ esp_err_t data_logger_init(const data_logger_config_t *config) {
         logger_config.max_files = MAX_LOG_FILES;
     }
     
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-    
-    // Open NVS
-    ret = nvs_open(NVS_LOG_NAMESPACE, NVS_READWRITE, &nvs_handle);
+    // NVS is already initialized by app_main, just open our namespace
+    esp_err_t ret = nvs_open(NVS_LOG_NAMESPACE, NVS_READWRITE, &nvs_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to open NVS");
         return ret;
@@ -87,23 +80,22 @@ esp_err_t data_logger_log(const sensor_data_t *sensor_data,
     memcpy(&entry.sensor_data, sensor_data, sizeof(sensor_data_t));
     memcpy(&entry.actuator_states, actuator_states, sizeof(actuator_states_t));
     
-    // Add to log
+    // Add to log using ring buffer
+    memcpy(&log_entries[write_index], &entry, sizeof(log_entry_t));
+    write_index = (write_index + 1) % MAX_LOG_ENTRIES;
     if (log_count < MAX_LOG_ENTRIES) {
-        memcpy(&log_entries[log_count], &entry, sizeof(log_entry_t));
         log_count++;
-    } else {
-        // Shift entries and add new one
-        memmove(&log_entries[0], &log_entries[1], 
-                (MAX_LOG_ENTRIES - 1) * sizeof(log_entry_t));
-        memcpy(&log_entries[MAX_LOG_ENTRIES - 1], &entry, sizeof(log_entry_t));
     }
     
     // Save to NVS periodically
     static uint32_t last_save = 0;
     uint32_t current_time = esp_timer_get_time() / 1000000;
-    if (current_time - last_save >= 60) { // Save every 60 seconds
-        nvs_set_blob(nvs_handle, "logs", log_entries, log_count * sizeof(log_entry_t));
-        nvs_commit(nvs_handle);
+    if (current_time - last_save >= 60) {
+        size_t save_size = log_count * sizeof(log_entry_t);
+        if (save_size <= 0x3000) {
+            nvs_set_blob(nvs_handle, "logs", log_entries, save_size);
+            nvs_commit(nvs_handle);
+        }
         last_save = current_time;
     }
     
@@ -120,7 +112,11 @@ esp_err_t data_logger_get_entries(log_entry_t *entries, size_t max_count,
     }
     
     size_t copy_count = (max_count < log_count) ? max_count : log_count;
-    memcpy(entries, log_entries, copy_count * sizeof(log_entry_t));
+    size_t start_idx = (write_index >= copy_count) ? (write_index - copy_count) : (MAX_LOG_ENTRIES - (copy_count - write_index));
+    
+    for (size_t i = 0; i < copy_count; i++) {
+        memcpy(&entries[i], &log_entries[(start_idx + i) % MAX_LOG_ENTRIES], sizeof(log_entry_t));
+    }
     *count = copy_count;
     
     return ESP_OK;

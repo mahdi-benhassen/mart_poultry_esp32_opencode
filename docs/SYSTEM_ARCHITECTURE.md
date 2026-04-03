@@ -38,12 +38,12 @@ The sensor module provides environmental data acquisition from multiple sensors:
 |--------|------|----------|-------------|-------|
 | DHT22 | Digital | GPIO 4 | Temperature | -40°C to 80°C |
 | DHT22 | Digital | GPIO 4 | Humidity | 0-100% |
-| MQ-137 | Analog | ADC1_CH0 | Ammonia (NH3) | 0-50 ppm |
-| MH-Z19B | Analog | ADC1_CH1 | CO2 | 0-5000 ppm |
-| LDR | Analog | ADC1_CH2 | Light Intensity | 0-1000 lux |
-| Ultrasonic | Analog | ADC1_CH3 | Water Level | 0-100% |
-| Load Cell | Analog | ADC1_CH4 | Feed Level | 0-100% |
-| Gas Sensor | Analog | ADC1_CH5 | Combustible Gas | 0-1000 ppm |
+| MQ-137 | Analog | ADC1_CH0 (GPIO 36) | Ammonia (NH3) | 0-50 ppm |
+| MH-Z19B | Analog | ADC1_CH3 (GPIO 39) | CO2 | 0-5000 ppm |
+| LDR | Analog | ADC1_CH6 (GPIO 34) | Light Intensity | 0-1000 lux |
+| Water Level | Analog | ADC1_CH7 (GPIO 35) | Water Level | 0-100% |
+| Load Cell | Analog | ADC1_CH4 (GPIO 32) | Feed Level | 0-100% |
+| Gas Sensor | Analog | ADC1_CH5 (GPIO 33) | Combustible Gas | 0-1000 ppm |
 
 **Implementation Files:**
 - [`main/sensors/sensor_manager.c`](../main/sensors/sensor_manager.c) - Central sensor coordination
@@ -302,7 +302,7 @@ if (temperature < setpoint - tolerance) {
 | CO2 | >2500 ppm | >3000 ppm | Ventilation increase |
 | Water Level | <20% | <10% | Pump activation |
 | Feed Level | <15% | <5% | Alert notification |
-| Gas Leak | >50 ppm | >100 ppm | Emergency ventilation |
+| Gas Leak | >1000 ppm | >5000 ppm | Emergency ventilation |
 
 ---
 
