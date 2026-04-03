@@ -1,5 +1,6 @@
 #include "heater_control.h"
 #include "esp_log.h"
+#include "../include/poultry_system_config.h"
 #include <string.h>
 
 static const char *TAG = "HEATER_CONTROL";

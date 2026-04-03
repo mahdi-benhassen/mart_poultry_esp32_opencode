@@ -1,6 +1,9 @@
 #ifndef POULTRY_SYSTEM_CONFIG_H
 #define POULTRY_SYSTEM_CONFIG_H
 
+#include "driver/gpio.h"
+#include "driver/ledc.h"
+#include "driver/adc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
