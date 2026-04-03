@@ -2,7 +2,7 @@
 #define MQTT_CLIENT_H
 
 #include "esp_err.h"
-#include "esp_mqtt_client.h"
+#include <mqtt_client.h>
 
 #ifdef __cplusplus
 extern "C" {
