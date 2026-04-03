@@ -1,4 +1,5 @@
 #include "wifi_manager.h"
+#include "../include/poultry_system_config.h"
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -51,7 +52,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-esp_err_t wifi_manager_init(const poultry_poultry_wifi_config_t *config) {
+esp_err_t wifi_manager_init(const poultry_wifi_config_t *config) {
     if (config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -60,10 +61,10 @@ esp_err_t wifi_manager_init(const poultry_poultry_wifi_config_t *config) {
     
     // Set defaults
     if (wifi_config.max_retry == 0) {
-        wifi_config.max_retry = WIFI_RETRY_MAX;
+        wifi_config.max_retry = 5;
     }
     if (wifi_config.timeout_ms == 0) {
-        wifi_config.timeout_ms = WIFI_CONNECT_TIMEOUT_MS;
+        wifi_config.timeout_ms = 10000;
     }
     
     // Initialize TCP/IP stack
@@ -96,10 +97,10 @@ esp_err_t wifi_manager_init(const poultry_poultry_wifi_config_t *config) {
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
     };
-    strncpy((char *)wifi_cfg.sta.ssid, wifi_config.ssid, sizeof(wifi_cfg.sta.ssid) - 1);
-    strncpy((char *)wifi_cfg.sta.password, wifi_config.password, sizeof(wifi_cfg.sta.password) - 1);
+    strncpy((char *)esp_wifi_cfg.sta.ssid, wifi_config.ssid, sizeof(esp_wifi_cfg.sta.ssid) - 1);
+    strncpy((char *)esp_wifi_cfg.sta.password, wifi_config.password, sizeof(esp_wifi_cfg.sta.password) - 1);
     
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &esp_wifi_cfg));
     
     initialized = true;
     ESP_LOGI(TAG, "WiFi manager initialized");
@@ -225,7 +226,7 @@ esp_err_t wifi_manager_scan(wifi_ap_record_t *ap_records, uint16_t max_ap,
     return ESP_OK;
 }
 
-esp_err_t wifi_manager_set_config(const poultry_poultry_wifi_config_t *config) {
+esp_err_t wifi_manager_set_config(const poultry_wifi_config_t *config) {
     if (!initialized || config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -240,10 +241,10 @@ esp_err_t wifi_manager_set_config(const poultry_poultry_wifi_config_t *config) {
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
     };
-    strncpy((char *)wifi_cfg.sta.ssid, wifi_config.ssid, sizeof(wifi_cfg.sta.ssid) - 1);
-    strncpy((char *)wifi_cfg.sta.password, wifi_config.password, sizeof(wifi_cfg.sta.password) - 1);
+    strncpy((char *)esp_wifi_cfg.sta.ssid, wifi_config.ssid, sizeof(esp_wifi_cfg.sta.ssid) - 1);
+    strncpy((char *)esp_wifi_cfg.sta.password, wifi_config.password, sizeof(esp_wifi_cfg.sta.password) - 1);
     
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &esp_wifi_cfg));
     
     ESP_LOGI(TAG, "WiFi configuration updated");
     return ESP_OK;
@@ -284,16 +285,16 @@ esp_err_t wifi_manager_start_ap(const char *ssid, const char *password) {
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
-    strncpy((char *)ap_config.ap.ssid, ssid, sizeof(ap_config.ap.ssid) - 1);
-    ap_config.ap.ssid_len = strlen(ssid);
+    strncpy((char *)esp_ap_cfg.ap.ssid, ssid, sizeof(esp_ap_cfg.ap.ssid) - 1);
+    esp_ap_cfg.ap.ssid_len = strlen(ssid);
     
     if (password != NULL && strlen(password) > 0) {
-        strncpy((char *)ap_config.ap.password, password, sizeof(ap_config.ap.password) - 1);
+        strncpy((char *)esp_ap_cfg.ap.password, password, sizeof(esp_ap_cfg.ap.password) - 1);
     } else {
-        ap_config.ap.authmode = WIFI_AUTH_OPEN;
+        esp_ap_cfg.ap.authmode = WIFI_AUTH_OPEN;
     }
     
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &esp_ap_cfg));
     ESP_ERROR_CHECK(esp_wifi_start());
     
     ap_mode = true;
