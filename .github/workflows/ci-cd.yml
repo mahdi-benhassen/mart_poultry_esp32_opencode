@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build (ESP-IDF ${{ env.ESP_IDF_VERSION }})
+    name: Build (ESP-IDF v4.4.7)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,7 +22,7 @@ jobs:
       - name: Build with ESP-IDF
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: ${{ env.ESP_IDF_VERSION }}
+          esp_idf_version: v4.4.7
           target: esp32
           path: '.'
 
