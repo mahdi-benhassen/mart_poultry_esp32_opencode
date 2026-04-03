@@ -39,7 +39,7 @@ esp_err_t actuator_manager_init(void) {
     ret = fan_control_init(&exhaust_fan_inst, &exhaust_fan_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize exhaust fan");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Exhaust fan initialized");
     }
@@ -55,7 +55,7 @@ esp_err_t actuator_manager_init(void) {
     ret = fan_control_init(&inlet_fan_inst, &inlet_fan_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize inlet fan");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Inlet fan initialized");
     }
@@ -72,7 +72,7 @@ esp_err_t actuator_manager_init(void) {
     ret = heater_control_init(&heater_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize heater");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Heater initialized");
     }
@@ -89,7 +89,7 @@ esp_err_t actuator_manager_init(void) {
     ret = feeder_control_init(&feeder_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize feeder");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Feeder initialized");
     }
@@ -102,7 +102,7 @@ esp_err_t actuator_manager_init(void) {
     ret = water_pump_init(&pump_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize water pump");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Water pump initialized");
     }
@@ -118,7 +118,7 @@ esp_err_t actuator_manager_init(void) {
     ret = lighting_control_init(&lighting_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize lighting");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Lighting initialized");
     }
@@ -135,7 +135,7 @@ esp_err_t actuator_manager_init(void) {
     ret = ventilation_control_init(&vent_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize ventilation");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         ESP_LOGI(TAG, "Ventilation initialized");
     }
@@ -150,7 +150,7 @@ esp_err_t actuator_manager_init(void) {
     ret = gpio_config(&alarm_conf);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to configure alarm GPIO");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         gpio_set_level(ALARM_GPIO, 0);
     }
@@ -165,7 +165,7 @@ esp_err_t actuator_manager_init(void) {
     ret = gpio_config(&curtain_conf);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to configure curtain GPIO");
-        ESP_LOGW\(TAG, "Non-critical initialization error"\);
+        ESP_LOGW(TAG, "Non-critical initialization error");
     } else {
         gpio_set_level(CURTAIN_MOTOR_GPIO, 0);
     }

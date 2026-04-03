@@ -3,6 +3,7 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "../include/poultry_system_config.h"
 #include <string.h>
 
 static const char *TAG = "LIGHTING_CTRL";
