@@ -255,7 +255,7 @@ esp_err_t mqtt_client_publish_alert(alert_type_t alert_type, const char *message
         return ESP_ERR_INVALID_ARG;
     }
     
-    char escaped_message[256];
+    char escaped_message[200];
     size_t j = 0;
     for (size_t i = 0; message[i] != '\0' && j < sizeof(escaped_message) - 1; i++) {
         if (message[i] == '"' || message[i] == '\\') {
@@ -269,7 +269,7 @@ esp_err_t mqtt_client_publish_alert(alert_type_t alert_type, const char *message
     }
     escaped_message[j] = '\0';
     
-    char json_buffer[256];
+    char json_buffer[512];
     snprintf(json_buffer, sizeof(json_buffer),
              "{\"alert_type\":%u,\"message\":\"%s\",\"timestamp\":%u}",
              alert_type, escaped_message, (uint32_t)(esp_timer_get_time() / 1000000));
