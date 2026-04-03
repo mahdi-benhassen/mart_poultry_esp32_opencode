@@ -16,7 +16,7 @@ static log_entry_t log_entries[MAX_LOG_ENTRIES] = {0};
 static size_t log_count = 0;
 static size_t write_index = 0;
 static bool initialized = false;
-static nvs_handle_t nvs_handle;
+static nvs_handle_t logger_nvs_handle;
 
 esp_err_t data_logger_init(const data_logger_config_t *config) {
     if (config == NULL) {
@@ -37,7 +37,7 @@ esp_err_t data_logger_init(const data_logger_config_t *config) {
     }
     
     // NVS is already initialized by app_main, just open our namespace
-    esp_err_t ret = nvs_open(NVS_LOG_NAMESPACE, NVS_READWRITE, &nvs_handle);
+    esp_err_t ret = nvs_open(NVS_LOG_NAMESPACE, NVS_READWRITE, &logger_nvs_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to open NVS");
         return ret;
@@ -45,7 +45,7 @@ esp_err_t data_logger_init(const data_logger_config_t *config) {
     
     // Load existing log entries from NVS
     size_t required_size = sizeof(log_entries);
-    ret = nvs_get_blob(nvs_handle, "logs", log_entries, &required_size);
+    ret = nvs_get_blob(logger_nvs_handle, "logs", log_entries, &required_size);
     if (ret == ESP_OK) {
         log_count = required_size / sizeof(log_entry_t);
         ESP_LOGI(TAG, "Loaded %d log entries from NVS", log_count);
@@ -93,8 +93,8 @@ esp_err_t data_logger_log(const sensor_data_t *sensor_data,
     if (current_time - last_save >= 60) {
         size_t save_size = log_count * sizeof(log_entry_t);
         if (save_size <= 0x3000) {
-            nvs_set_blob(nvs_handle, "logs", log_entries, save_size);
-            nvs_commit(nvs_handle);
+            nvs_set_blob(logger_nvs_handle, "logs", log_entries, save_size);
+            nvs_commit(logger_nvs_handle);
         }
         last_save = current_time;
     }
@@ -152,8 +152,8 @@ esp_err_t data_logger_clear(void) {
     memset(log_entries, 0, sizeof(log_entries));
     
     // Clear NVS
-    nvs_erase_key(nvs_handle, "logs");
-    nvs_commit(nvs_handle);
+    nvs_erase_key(logger_nvs_handle, "logs");
+    nvs_commit(logger_nvs_handle);
     
     ESP_LOGI(TAG, "Log entries cleared");
     return ESP_OK;
@@ -222,11 +222,11 @@ esp_err_t data_logger_deinit(void) {
     if (initialized) {
         size_t save_size = log_count * sizeof(log_entry_t);
         if (save_size <= 0x3000) {
-            nvs_set_blob(nvs_handle, "logs", log_entries, save_size);
-            nvs_commit(nvs_handle);
+            nvs_set_blob(logger_nvs_handle, "logs", log_entries, save_size);
+            nvs_commit(logger_nvs_handle);
         }
         
-        nvs_close(nvs_handle);
+        nvs_close(logger_nvs_handle);
         initialized = false;
         ESP_LOGI(TAG, "Data logger deinitialized");
     }
