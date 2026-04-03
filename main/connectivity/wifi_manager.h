@@ -16,7 +16,7 @@ typedef struct {
     char password[WIFI_PASSWORD_MAX_LEN]; /*!< WiFi password */
     uint8_t max_retry;                  /*!< Maximum connection retries */
     uint32_t timeout_ms;                /*!< Connection timeout in milliseconds */
-} wifi_config_t;
+} poultry_wifi_config_t;
 
 /**
  * @brief WiFi connection status

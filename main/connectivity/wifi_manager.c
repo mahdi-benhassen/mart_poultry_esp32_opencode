@@ -13,7 +13,7 @@ static const char *TAG = "WIFI_MANAGER";
 #define WIFI_FAIL_BIT      BIT1
 
 static EventGroupHandle_t wifi_event_group;
-static wifi_config_t wifi_config = {0};
+static poultry_wifi_config_t wifi_config = {0};
 static wifi_status_t wifi_status = WIFI_STATUS_DISCONNECTED;
 static int retry_count = 0;
 static bool initialized = false;
@@ -51,12 +51,12 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-esp_err_t wifi_manager_init(const wifi_config_t *config) {
+esp_err_t wifi_manager_init(const poultry_poultry_wifi_config_t *config) {
     if (config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     
-    memcpy(&wifi_config, config, sizeof(wifi_config_t));
+    memcpy(&wifi_config, config, sizeof(poultry_wifi_config_t));
     
     // Set defaults
     if (wifi_config.max_retry == 0) {
@@ -89,7 +89,7 @@ esp_err_t wifi_manager_init(const wifi_config_t *config) {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     
     // Set WiFi configuration
-    wifi_config_t wifi_cfg = {
+    wifi_config_t esp_wifi_cfg = {
         .sta = {
             .ssid = "",
             .password = "",
@@ -225,15 +225,15 @@ esp_err_t wifi_manager_scan(wifi_ap_record_t *ap_records, uint16_t max_ap,
     return ESP_OK;
 }
 
-esp_err_t wifi_manager_set_config(const wifi_config_t *config) {
+esp_err_t wifi_manager_set_config(const poultry_poultry_wifi_config_t *config) {
     if (!initialized || config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     
-    memcpy(&wifi_config, config, sizeof(wifi_config_t));
+    memcpy(&wifi_config, config, sizeof(poultry_wifi_config_t));
     
     // Update WiFi configuration
-    wifi_config_t wifi_cfg = {
+    wifi_config_t esp_wifi_cfg = {
         .sta = {
             .ssid = "",
             .password = "",
@@ -249,12 +249,12 @@ esp_err_t wifi_manager_set_config(const wifi_config_t *config) {
     return ESP_OK;
 }
 
-esp_err_t wifi_manager_get_config(wifi_config_t *config) {
+esp_err_t wifi_manager_get_config(poultry_wifi_config_t *config) {
     if (!initialized || config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     
-    memcpy(config, &wifi_config, sizeof(wifi_config_t));
+    memcpy(config, &wifi_config, sizeof(poultry_wifi_config_t));
     return ESP_OK;
 }
 
@@ -274,7 +274,7 @@ esp_err_t wifi_manager_start_ap(const char *ssid, const char *password) {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     
     // Configure AP
-    wifi_config_t ap_config = {
+    wifi_config_t esp_ap_cfg = {
         .ap = {
             .ssid = "",
             .ssid_len = 0,

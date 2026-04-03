@@ -501,7 +501,7 @@ static esp_err_t init_subsystems(void) {
     }
     ESP_LOGI(TAG, "Gas leak detector initialized");
     
-    wifi_config_t wifi_cfg = {
+    poultry_wifi_config_t wifi_cfg = {
         .ssid = "",
         .password = "",
         .max_retry = WIFI_RETRY_MAX,

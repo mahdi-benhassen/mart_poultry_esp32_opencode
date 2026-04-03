@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include <string.h>
+#include <time.h>
 
 static const char *TAG = "FEEDING_SCHED";
 
@@ -78,9 +79,11 @@ esp_err_t feeding_schedule_get_current(uint8_t *amount_grams) {
         return ESP_ERR_INVALID_STATE;
     }
     
-    uint64_t now_us = esp_timer_get_time();
-    uint64_t epoch_seconds = 1743638400ULL + (now_us / 1000000ULL);
-    uint8_t current_hour = (epoch_seconds / 3600) % 24;
+    time_t now;
+    time(&now);
+    struct tm timeinfo;
+    localtime_r(&now, &timeinfo);
+    uint8_t current_hour = timeinfo.tm_hour;
     
     *amount_grams = feeding_schedule[current_hour];
     return ESP_OK;

@@ -81,28 +81,23 @@ esp_err_t climate_control_update(const sensor_data_t *sensor_data,
     float ventilation_output = 0;
     
     // Temperature control
-    if (sensor_data->temperature > 0) {
-        pid_controller_update(&temp_pid_state, &temp_pid_config, 
-                            sensor_data->temperature, &temp_output);
-        
-        // Temperature too high - increase cooling (fans)
-        if (sensor_data->temperature > climate_config.temp_setpoint + climate_config.temp_tolerance) {
-            actuator_states->exhaust_fan_speed = (uint8_t)temp_output;
-            actuator_states->inlet_fan_speed = (uint8_t)(temp_output * 0.8f);
-            actuator_states->heater_power = 0;
-        }
-        // Temperature too low - increase heating
-        else if (sensor_data->temperature < climate_config.temp_setpoint - climate_config.temp_tolerance) {
-            actuator_states->heater_power = (uint8_t)temp_output;
-            actuator_states->exhaust_fan_speed = 20; // Minimum ventilation
-            actuator_states->inlet_fan_speed = 10;
-        }
-        // Temperature within range
-        else {
-            actuator_states->exhaust_fan_speed = 30; // Minimum ventilation
-            actuator_states->inlet_fan_speed = 20;
-            actuator_states->heater_power = 0;
-        }
+    pid_controller_update(&temp_pid_state, &temp_pid_config, 
+                        sensor_data->temperature, &temp_output);
+    
+    if (sensor_data->temperature > climate_config.temp_setpoint + climate_config.temp_tolerance) {
+        actuator_states->exhaust_fan_speed = (uint8_t)temp_output;
+        actuator_states->inlet_fan_speed = (uint8_t)(temp_output * 0.8f);
+        actuator_states->heater_power = 0;
+    }
+    else if (sensor_data->temperature < climate_config.temp_setpoint - climate_config.temp_tolerance) {
+        actuator_states->heater_power = (uint8_t)temp_output;
+        actuator_states->exhaust_fan_speed = 20;
+        actuator_states->inlet_fan_speed = 10;
+    }
+    else {
+        actuator_states->exhaust_fan_speed = 30;
+        actuator_states->inlet_fan_speed = 20;
+        actuator_states->heater_power = 0;
     }
     
     // Humidity control

@@ -163,9 +163,9 @@ esp_err_t sensor_manager_read_all(sensor_data_t *data) {
     
     uint8_t failed_sensors = 0;
     uint8_t successful_reads = 0;
+    dht22_data_t dht_data;
     
     if (sensor_health & SENSOR_DHT22_OK) {
-        dht22_data_t dht_data;
         if (dht22_read(&dht_data) == ESP_OK && dht_data.valid) {
             data->temperature = dht_data.temperature;
             data->humidity = dht_data.humidity;
