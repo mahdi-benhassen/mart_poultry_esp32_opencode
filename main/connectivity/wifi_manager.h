@@ -35,7 +35,7 @@ typedef enum {
  * @param config WiFi configuration
  * @return esp_err_t ESP_OK on success
  */
-esp_err_t wifi_manager_init(const wifi_config_t *config);
+esp_err_t wifi_manager_init(const poultry_wifi_config_t *config);
 
 /**
  * @brief Connect to WiFi
@@ -99,7 +99,7 @@ esp_err_t wifi_manager_scan(wifi_ap_record_t *ap_records, uint16_t max_ap,
  * @param config WiFi configuration
  * @return esp_err_t ESP_OK on success
  */
-esp_err_t wifi_manager_set_config(const wifi_config_t *config);
+esp_err_t wifi_manager_set_config(const poultry_wifi_config_t *config);
 
 /**
  * @brief Get WiFi configuration
@@ -107,7 +107,7 @@ esp_err_t wifi_manager_set_config(const wifi_config_t *config);
  * @param config Pointer to store WiFi configuration
  * @return esp_err_t ESP_OK on success
  */
-esp_err_t wifi_manager_get_config(wifi_config_t *config);
+esp_err_t wifi_manager_get_config(poultry_wifi_config_t *config);
 
 /**
  * @brief Start WiFi in AP mode

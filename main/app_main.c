@@ -110,7 +110,6 @@ static esp_err_t load_config_from_nvs(void) {
     nvs_get_str(nvs_handle, "mqtt_password", system_config.mqtt_password, &password_len);
     nvs_get_str(nvs_handle, "mqtt_client_id", system_config.mqtt_client_id, &client_id_len);
     uint32_t temp_raw = 0, humidity_raw = 0;
-    size_t temp_size = sizeof(temp_raw), humidity_size = sizeof(humidity_raw);
     esp_err_t temp_ret = nvs_get_u32(nvs_handle, "temp_setpoint_raw", &temp_raw);
     esp_err_t hum_ret = nvs_get_u32(nvs_handle, "humidity_setpoint_raw", &humidity_raw);
     if (temp_ret == ESP_OK && temp_raw != 0) {
@@ -487,12 +486,14 @@ static esp_err_t init_subsystems(void) {
     
     gas_leak_config_t gas_leak_cfg = {
         .enabled = true,
-        .alarm_threshold = GAS_LEAK_THRESHOLD_PPM,
-        .danger_threshold = GAS_DANGER_THRESHOLD_PPM,
+        .low_threshold_ppm = GAS_SENSOR_ALARM_THRESHOLD,
+        .moderate_threshold_ppm = GAS_SENSOR_ALARM_THRESHOLD * 2,
+        .high_threshold_ppm = GAS_SENSOR_DANGER_THRESHOLD,
+        .critical_threshold_ppm = GAS_SENSOR_DANGER_THRESHOLD * 2,
+        .detection_interval_ms = 5000,
         .buzzer_enabled = true,
-        .ventilation_enabled = true,
-        .ventilation_speed = 100,
-        .cooldown_seconds = 60
+        .mqtt_enabled = true,
+        .auto_ventilation = true
     };
     ret = gas_leak_detector_init(&gas_leak_cfg);
     if (ret != ESP_OK) {
