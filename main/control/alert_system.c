@@ -1,11 +1,10 @@
-﻿#include "alert_system.h"
+#include "alert_system.h"
 #include "../actuators/actuator_manager.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "../connectivity/mqtt_client.h"
 #include <string.h>
 #include <stdio.h>
-
 static const char *TAG = "ALERT_SYSTEM";
 
 #define MAX_ALERT_HISTORY 50
@@ -159,6 +158,7 @@ esp_err_t alert_system_trigger(alert_type_t type, float value, float threshold,
     
     if (message != NULL) {
         strncpy(event.message, message, sizeof(event.message) - 1);
+        event.message[sizeof(event.message) - 1] = '\0';
     }
     
     // Add to history

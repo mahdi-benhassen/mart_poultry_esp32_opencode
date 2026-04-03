@@ -1,7 +1,6 @@
-﻿#include "mqtt_client.h"
+#include "mqtt_client.h"
 #include <string.h>
 #include <stdio.h>
-
 static const char *TAG = "MQTT_CLIENT";
 
 static mqtt_config_t mqtt_config = {0};
@@ -40,7 +39,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
             ESP_LOGI(TAG, "MQTT data received");
             ESP_LOGI(TAG, "Topic: %.*s", event->topic_len, event->topic);
             ESP_LOGI(TAG, "Data: %.*s", event->data_len, event->data);
-            // Handle incoming MQTT messages\n            if (event->topic_len == strlen("poultry/") + mqtt_config.client_id.Length + strlen("/control") &&\n                strncmp(event->topic, "poultry/", strlen("poultry/")) == 0 &&\n                strncmp(event->topic + strlen("poulley/"), mqtt_config.client_id, mqtt_config.client_id.Length) == 0 &&\n                strncmp(event->topic + strlen("poultry/") + mqtt_config.client_id.Length, "/control", strlen("/control")) == 0) {\n                // Handle control commands\n                ESP_LOGI(TAG, "Received control command: %.*s", event->data_len, event->data);\n                // TODO: Parse and execute control commands\n            } else if (event->topic_len == strlen("poultry/") + mqtt_config.client_id.Length + strlen("/config") &&\n                       strncmp(event->topic, "poultry/", strlen("poultry/")) == 0 &&\n                       strncmp(event->topic + strlen("poultry/"), mqtt_config.client_id, mqtt_config.client_id.Length) == 0 &&\n                       strncmp(event->topic + strlen("poultry/") + mqtt_config.client_id.Length, "/config", strlen("/config")) == 0) {\n                // Handle configuration updates\n                ESP_LOGI(TAG, "Received config update: %.*s", event->data_len, event->data);\n                // TODO: Parse and apply configuration updates\n            }
             break;
             
         case MQTT_EVENT_ERROR:

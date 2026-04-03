@@ -1,4 +1,5 @@
 #include "web_server.h"
+#include "app_main.h"
 #include "esp_log.h"
 #include "esp_http_server.h"
 #include "esp_timer.h"
@@ -13,34 +14,17 @@ static httpd_handle_t server_handle = NULL;
 static web_server_config_t server_config = {0};
 static bool server_running = false;
 
-static SemaphoreHandle_t data_mutex = NULL;
-
 static sensor_data_t cached_sensor_data = {0};
 static actuator_states_t cached_actuator_states = {0};
 static system_status_t cached_system_status = {0};
 static alert_type_t cached_active_alert = ALERT_NONE;
 
-extern sensor_data_t get_cached_sensor_data(void);
-extern actuator_states_t get_cached_actuator_states(void);
-extern system_status_t get_cached_system_status(void);
-extern alert_type_t get_cached_active_alert(void);
-
 static esp_err_t update_cached_data(void) {
-    if (data_mutex != NULL && xSemaphoreTake(data_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        sensor_data_t *sensor = get_cached_sensor_data();
-        actuator_states_t *actuator = get_cached_actuator_states();
-        system_status_t *status = get_cached_system_status();
-        
-        if (sensor != NULL) memcpy(&cached_sensor_data, sensor, sizeof(sensor_data_t));
-        if (actuator != NULL) memcpy(&cached_actuator_states, actuator, sizeof(actuator_states_t));
-        if (status != NULL) memcpy(&cached_system_status, status, sizeof(system_status_t));
-        
-        cached_active_alert = get_cached_active_alert();
-        
-        xSemaphoreGive(data_mutex);
-        return ESP_OK;
-    }
-    return ESP_ERR_TIMEOUT;
+    cached_sensor_data = get_cached_sensor_data();
+    cached_actuator_states = get_cached_actuator_states();
+    cached_system_status = get_cached_system_status();
+    cached_active_alert = get_cached_active_alert();
+    return ESP_OK;
 }
 
 static esp_err_t root_get_handler(httpd_req_t *req) {
@@ -378,12 +362,6 @@ esp_err_t web_server_init(const web_server_config_t *config) {
     
     memcpy(&server_config, config, sizeof(web_server_config_t));
     
-    data_mutex = xSemaphoreCreateMutex();
-    if (data_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create data mutex");
-        return ESP_ERR_NO_MEM;
-    }
-    
     ESP_LOGI(TAG, "Web server initialized on port %d", config->port);
     return ESP_OK;
 }
@@ -455,11 +433,6 @@ esp_err_t web_server_register_uri_handler(const httpd_uri_t *uri_handler) {
 
 esp_err_t web_server_deinit(void) {
     web_server_stop();
-    
-    if (data_mutex != NULL) {
-        vSemaphoreDelete(data_mutex);
-        data_mutex = NULL;
-    }
     
     ESP_LOGI(TAG, "Web server deinitialized");
     return ESP_OK;

@@ -48,19 +48,39 @@ extern system_status_t get_cached_system_status(void);
 extern alert_type_t get_cached_active_alert(void);
 
 sensor_data_t get_cached_sensor_data(void) {
-    return system_status.current_sensor_data;
+    sensor_data_t data = {0};
+    if (system_status_mutex != NULL && xSemaphoreTake(system_status_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        memcpy(&data, &system_status.current_sensor_data, sizeof(sensor_data_t));
+        xSemaphoreGive(system_status_mutex);
+    }
+    return data;
 }
 
 actuator_states_t get_cached_actuator_states(void) {
-    return system_status.actuator_states;
+    actuator_states_t states = {0};
+    if (system_status_mutex != NULL && xSemaphoreTake(system_status_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        memcpy(&states, &system_status.actuator_states, sizeof(actuator_states_t));
+        xSemaphoreGive(system_status_mutex);
+    }
+    return states;
 }
 
 system_status_t get_cached_system_status(void) {
-    return system_status;
+    system_status_t status = {0};
+    if (system_status_mutex != NULL && xSemaphoreTake(system_status_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        memcpy(&status, &system_status, sizeof(system_status_t));
+        xSemaphoreGive(system_status_mutex);
+    }
+    return status;
 }
 
 alert_type_t get_cached_active_alert(void) {
-    return system_status.active_alert;
+    alert_type_t alert = ALERT_NONE;
+    if (system_status_mutex != NULL && xSemaphoreTake(system_status_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+        alert = system_status.active_alert;
+        xSemaphoreGive(system_status_mutex);
+    }
+    return alert;
 }
 
 static esp_err_t load_config_from_nvs(void) {
@@ -86,8 +106,11 @@ static esp_err_t load_config_from_nvs(void) {
     nvs_get_str(nvs_handle, "mqtt_username", system_config.mqtt_username, &username_len);
     nvs_get_str(nvs_handle, "mqtt_password", system_config.mqtt_password, &password_len);
     nvs_get_str(nvs_handle, "mqtt_client_id", system_config.mqtt_client_id, &client_id_len);
-    nvs_get_u32(nvs_handle, "temp_setpoint", (uint32_t*)&system_config.temp_setpoint);
-    nvs_get_u32(nvs_handle, "humidity_setpoint", (uint32_t*)&system_config.humidity_setpoint);
+    float temp_raw = 0, humidity_raw = 0;
+    nvs_get_u32(nvs_handle, "temp_setpoint_raw", (uint32_t*)&temp_raw);
+    nvs_get_u32(nvs_handle, "humidity_setpoint_raw", (uint32_t*)&humidity_raw);
+    if (temp_raw != 0) system_config.temp_setpoint = temp_raw;
+    if (humidity_raw != 0) system_config.humidity_setpoint = humidity_raw;
     
     nvs_close(nvs_handle);
     ESP_LOGI(TAG, "Configuration loaded from NVS");
@@ -110,8 +133,8 @@ static esp_err_t save_config_to_nvs(void) {
     nvs_set_str(nvs_handle, "mqtt_username", system_config.mqtt_username);
     nvs_set_str(nvs_handle, "mqtt_password", system_config.mqtt_password);
     nvs_set_str(nvs_handle, "mqtt_client_id", system_config.mqtt_client_id);
-    nvs_set_u32(nvs_handle, "temp_setpoint", (uint32_t)system_config.temp_setpoint);
-    nvs_set_u32(nvs_handle, "humidity_setpoint", (uint32_t)system_config.humidity_setpoint);
+    nvs_set_u32(nvs_handle, "temp_setpoint_raw", *(uint32_t*)&system_config.temp_setpoint);
+    nvs_set_u32(nvs_handle, "humidity_setpoint_raw", *(uint32_t*)&system_config.humidity_setpoint);
     
     err = nvs_commit(nvs_handle);
     nvs_close(nvs_handle);
@@ -634,7 +657,7 @@ void app_main(void) {
     
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "System initialized successfully!");
-    ESP_LOGI(TAG, "Web server: http://192.168.1.100:%d", WEB_SERVER_PORT);
+    ESP_LOGI(TAG, "Web server: http://<ESP32_IP>:%d", WEB_SERVER_PORT);
     ESP_LOGI(TAG, "========================================");
     
     while (1) {

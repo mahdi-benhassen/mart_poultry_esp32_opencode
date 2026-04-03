@@ -373,7 +373,7 @@ poultry/<client_id>/config      - Configuration updates
 |-----------|------|---------|
 | Application Code | ~800KB | Main firmware |
 | NVS Storage | ~64KB | Configuration |
-| SPIFFS | ~1MB | Data logs |
+| SPIFFS | ~64KB | Web assets |
 | Bootloader | ~20KB | Boot sequence |
 | Partition Table | ~4KB | Flash layout |
 

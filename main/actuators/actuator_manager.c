@@ -23,12 +23,9 @@ static uint8_t clamp_u8(uint8_t value, uint8_t min, uint8_t max) {
     return value;
 }
 
-static bool clamp_bool(bool value) {
-    return value;
-}
-
 esp_err_t actuator_manager_init(void) {
     esp_err_t ret;
+    esp_err_t first_error = ESP_OK;
     
     ESP_LOGI(TAG, "Initializing actuator manager...");
     
@@ -43,6 +40,7 @@ esp_err_t actuator_manager_init(void) {
     ret = fan_control_init(&exhaust_fan_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize exhaust fan");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Exhaust fan initialized");
     }
@@ -58,6 +56,7 @@ esp_err_t actuator_manager_init(void) {
     ret = fan_control_init(&inlet_fan_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize inlet fan");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Inlet fan initialized");
     }
@@ -74,6 +73,7 @@ esp_err_t actuator_manager_init(void) {
     ret = heater_control_init(&heater_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize heater");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Heater initialized");
     }
@@ -90,6 +90,7 @@ esp_err_t actuator_manager_init(void) {
     ret = feeder_control_init(&feeder_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize feeder");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Feeder initialized");
     }
@@ -102,6 +103,7 @@ esp_err_t actuator_manager_init(void) {
     ret = water_pump_init(&pump_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize water pump");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Water pump initialized");
     }
@@ -117,6 +119,7 @@ esp_err_t actuator_manager_init(void) {
     ret = lighting_control_init(&lighting_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize lighting");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Lighting initialized");
     }
@@ -133,6 +136,7 @@ esp_err_t actuator_manager_init(void) {
     ret = ventilation_control_init(&vent_cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize ventilation");
+        if (first_error == ESP_OK) first_error = ret;
     } else {
         ESP_LOGI(TAG, "Ventilation initialized");
     }
@@ -144,8 +148,13 @@ esp_err_t actuator_manager_init(void) {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE
     };
-    gpio_config(&alarm_conf);
-    gpio_set_level(ALARM_GPIO, 0);
+    ret = gpio_config(&alarm_conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure alarm GPIO");
+        if (first_error == ESP_OK) first_error = ret;
+    } else {
+        gpio_set_level(ALARM_GPIO, 0);
+    }
     
     gpio_config_t curtain_conf = {
         .pin_bit_mask = (1ULL << CURTAIN_MOTOR_GPIO),
@@ -154,14 +163,19 @@ esp_err_t actuator_manager_init(void) {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE
     };
-    gpio_config(&curtain_conf);
-    gpio_set_level(CURTAIN_MOTOR_GPIO, 0);
+    ret = gpio_config(&curtain_conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure curtain GPIO");
+        if (first_error == ESP_OK) first_error = ret;
+    } else {
+        gpio_set_level(CURTAIN_MOTOR_GPIO, 0);
+    }
     
     memset(&current_states, 0, sizeof(actuator_states_t));
     initialized = true;
     
     ESP_LOGI(TAG, "Actuator manager initialized successfully");
-    return ESP_OK;
+    return first_error;
 }
 
 esp_err_t actuator_manager_set_states(const actuator_states_t *states) {
@@ -178,7 +192,7 @@ esp_err_t actuator_manager_set_states(const actuator_states_t *states) {
         .lighting_intensity = clamp_u8(states->lighting_intensity, 0, 100),
         .ventilation_position = clamp_u8(states->ventilation_position, 0, 100),
         .curtain_position = clamp_u8(states->curtain_position, 0, 100),
-        .alarm_state = clamp_bool(states->alarm_state)
+        .alarm_state = states->alarm_state
     };
     
     esp_err_t ret;

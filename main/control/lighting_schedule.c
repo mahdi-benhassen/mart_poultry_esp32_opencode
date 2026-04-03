@@ -89,9 +89,8 @@ esp_err_t lighting_schedule_get_current(uint8_t *intensity) {
         return ESP_ERR_INVALID_STATE;
     }
     
-    // Get current hour from time manager
-    uint8_t current_hour = 0;
-    // TODO: Get actual hour from time manager
+    uint64_t now_us = esp_timer_get_time();
+    uint8_t current_hour = (now_us / 3600000000ULL) % 24;
     
     *intensity = lighting_schedule[current_hour];
     return ESP_OK;

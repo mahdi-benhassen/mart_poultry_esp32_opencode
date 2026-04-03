@@ -307,6 +307,7 @@ esp_err_t gas_leak_detector_trigger_alert(gas_leak_severity_t severity,
     
     if (message != NULL) {
         strncpy(event.message, message, sizeof(event.message) - 1);
+        event.message[sizeof(event.message) - 1] = '\0';
     } else {
         snprintf(event.message, sizeof(event.message),
                  "Manual gas leak alert: %s level", get_severity_name(severity));

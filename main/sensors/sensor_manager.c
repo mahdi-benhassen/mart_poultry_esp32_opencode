@@ -142,7 +142,14 @@ esp_err_t sensor_manager_init(void) {
     initialized = true;
     ESP_LOGI(TAG, "Sensor manager initialized. Health mask: 0x%02X", sensor_health);
     
-    return ESP_OK;
+    if (sensor_health == 0) {
+        ESP_LOGE(TAG, "No sensors initialized successfully");
+        return ESP_ERR_NOT_FOUND;
+    }
+    
+    return (sensor_health == (SENSOR_DHT22_OK | SENSOR_AMMONIA_OK | SENSOR_CO2_OK |
+                              SENSOR_LIGHT_OK | SENSOR_WATER_OK | SENSOR_FEED_OK | SENSOR_GAS_OK))
+           ? ESP_OK : ESP_ERR_TIMEOUT;
 }
 
 esp_err_t sensor_manager_read_all(sensor_data_t *data) {

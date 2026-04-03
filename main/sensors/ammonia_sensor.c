@@ -2,6 +2,7 @@
 #include "esp_log.h"
 #include "esp_adc_cal.h"
 #include <string.h>
+#include <math.h>
 
 static const char *TAG = "AMMONIA_SENSOR";
 

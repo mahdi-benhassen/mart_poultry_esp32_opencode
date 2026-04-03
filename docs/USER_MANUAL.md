@@ -134,8 +134,7 @@ GND          →    GND
 ```
 MH-Z19B Pin  →    ESP32 Pin
 VCC          →    5V
-TX           →    GPIO 16 (UART RX)
-RX           →    GPIO 17 (UART TX)
+AOUT         →    GPIO 39 (ADC1_CH3)
 GND          →    GND
 ```
 
@@ -154,8 +153,7 @@ Other leg    →    GPIO 34 (ADC1_CH2)
 ```
 Ultrasonic Pin →  ESP32 Pin
 VCC            →  3.3V
-TRIG           →  GPIO 32
-ECHO           →  GPIO 35 (ADC1_CH3)
+AOUT           →  GPIO 35 (ADC1_CH7)
 GND            →  GND
 ```
 
@@ -164,7 +162,7 @@ GND            →  GND
 Load Cell Pin →   ESP32 Pin
 E+            →   5V
 E-            →   GND
-A+            →   GPIO 33 (ADC1_CH4)
+A+            →   GPIO 32 (ADC1_CH4)
 A-            →   GND
 ```
 
@@ -172,7 +170,7 @@ A-            →   GND
 ```
 Gas Sensor Pin →  ESP32 Pin
 VCC            →  5V
-AOUT           →  GPIO 39 (ADC1_CH5)
+AOUT           →  GPIO 33 (ADC1_CH5)
 GND            →  GND
 ```
 

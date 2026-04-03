@@ -1,6 +1,5 @@
 idf_component_register(
     SRCS 
-        "main.c"
         "app_main.c"
         "sensors/sensor_manager.c"
         "sensors/dht22.c"
@@ -9,6 +8,7 @@ idf_component_register(
         "sensors/light_sensor.c"
         "sensors/water_level_sensor.c"
         "sensors/feed_level_sensor.c"
+        "sensors/gas_sensor.c"
         "actuators/actuator_manager.c"
         "actuators/fan_control.c"
         "actuators/heater_control.c"
@@ -16,18 +16,17 @@ idf_component_register(
         "actuators/water_pump.c"
         "actuators/lighting_control.c"
         "actuators/ventilation_control.c"
+        "actuators/buzzer_control.c"
         "control/pid_controller.c"
         "control/climate_control.c"
         "control/feeding_schedule.c"
         "control/lighting_schedule.c"
         "control/alert_system.c"
+        "control/gas_leak_detector.c"
         "connectivity/wifi_manager.c"
         "connectivity/mqtt_client.c"
         "connectivity/web_server.c"
-        "data/nvs_storage.c"
         "data/data_logger.c"
-        "utils/config_manager.c"
-        "utils/time_manager.c"
     INCLUDE_DIRS 
         "."
         "include"
@@ -36,7 +35,6 @@ idf_component_register(
         "control"
         "connectivity"
         "data"
-        "utils"
     REQUIRES 
         nvs_flash
         esp_wifi

@@ -1,6 +1,7 @@
 #include "feeding_schedule.h"
 #include "../actuators/feeder_control.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include <string.h>
 
 static const char *TAG = "FEEDING_SCHED";
@@ -76,10 +77,8 @@ esp_err_t feeding_schedule_get_current(uint8_t *amount_grams) {
         return ESP_ERR_INVALID_STATE;
     }
     
-    // Get current hour from time manager
-    uint8_t current_hour = 0;
-    // TODO: Get actual hour from time manager
-    // For now, use a simple counter or RTC
+    uint64_t now_us = esp_timer_get_time();
+    uint8_t current_hour = (now_us / 3600000000ULL) % 24;
     
     *amount_grams = feeding_schedule[current_hour];
     return ESP_OK;
