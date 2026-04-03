@@ -44,7 +44,7 @@ idf_component_register(
         json
         esp_http_server
         driver
-        esp_adc
+        esp_adc_cal
         esp_timer
         spiffs
         fatfs
