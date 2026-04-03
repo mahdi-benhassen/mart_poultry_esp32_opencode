@@ -1,0 +1,151 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+env:
+  ESP_IDF_VERSION: v4.4.7
+
+jobs:
+  build:
+    name: Build (ESP-IDF ${{ env.ESP_IDF_VERSION }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: ${{ env.ESP_IDF_VERSION }}
+          target: esp32
+          path: '.'
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-bin
+          path: |
+            build/*.bin
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+          retention-days: 30
+
+  lint:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy
+
+      - name: Check CMakeLists.txt consistency
+        run: |
+          echo "=== Checking CMakeLists.txt references ==="
+          cd main
+          declared_files=$(grep -oP '"[^"]+\.(c|h)"' CMakeLists.txt | tr -d '"' | sort)
+          actual_files=$(find . -name "*.c" -o -name "*.h" | sed 's|^\./||' | sort)
+          missing=$(comm -23 <(echo "$actual_files") <(echo "$declared_files"))
+          if [ -n "$missing" ]; then
+            echo "WARNING: Files not declared in CMakeLists.txt:"
+            echo "$missing"
+          fi
+          echo "=== CMakeLists.txt check passed ==="
+
+      - name: Check for BOM characters
+        run: |
+          echo "=== Checking for BOM characters ==="
+          bom_files=$(find main -name "*.c" -o -name "*.h" | xargs grep -lP '^\xEF\xBB\xBF' 2>/dev/null || true)
+          if [ -n "$bom_files" ]; then
+            echo "ERROR: BOM characters found in:"
+            echo "$bom_files"
+            exit 1
+          fi
+          echo "No BOM characters found"
+
+      - name: Check for duplicate source entries
+        run: |
+          echo "=== Checking for duplicate CMakeLists.txt entries ==="
+          duplicates=$(grep -oP '"[^"]+\.c"' main/CMakeLists.txt | sort | uniq -d)
+          if [ -n "$duplicates" ]; then
+            echo "ERROR: Duplicate entries found:"
+            echo "$duplicates"
+            exit 1
+          fi
+          echo "No duplicates found"
+
+      - name: Check for hardcoded epoch timestamps
+        run: |
+          echo "=== Checking for hardcoded epoch timestamps ==="
+          epoch_files=$(grep -rn "1743638400" main/ --include="*.c" --include="*.h" || true)
+          if [ -n "$epoch_files" ]; then
+            echo "ERROR: Hardcoded epoch timestamp found:"
+            echo "$epoch_files"
+            exit 1
+          fi
+          echo "No hardcoded epoch timestamps found"
+
+  docs-check:
+    name: Documentation Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check GPIO pin consistency
+        run: |
+          echo "=== Checking GPIO pin consistency ==="
+          # Extract GPIO definitions from config
+          config_pins=$(grep -oP 'GPIO_NUM_\d+' main/include/poultry_system_config.h | sort -u)
+          echo "GPIO pins defined in config:"
+          echo "$config_pins"
+          echo "=== GPIO check passed ==="
+
+      - name: Check for broken markdown links
+        run: |
+          echo "=== Checking documentation ==="
+          for f in README.md docs/*.md; do
+            if [ -f "$f" ]; then
+              echo "Checking $f..."
+              # Check for TODO markers
+              todos=$(grep -n "TODO\|FIXME\|XXX" "$f" || true)
+              if [ -n "$todos" ]; then
+                echo "WARNING: TODO/FIXME markers found in $f:"
+                echo "$todos"
+              fi
+            fi
+          done
+          echo "=== Documentation check passed ==="
+
+  release:
+    name: Create Release
+    needs: [build, lint, docs-check]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-bin
+          path: release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/**/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
