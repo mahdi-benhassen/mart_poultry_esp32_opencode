@@ -3,6 +3,7 @@
 
 #include "esp_err.h"
 #include "esp_wifi.h"
+#include "../include/poultry_system_config.h"
 
 #ifdef __cplusplus
 extern "C" {
