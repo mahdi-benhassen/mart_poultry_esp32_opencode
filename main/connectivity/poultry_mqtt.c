@@ -1,4 +1,5 @@
 #include "poultry_mqtt.h"
+#include "esp_log.h"
 #include <string.h>
 #include <stdio.h>
 static const char *TAG = "MQTT_CLIENT";
@@ -75,7 +76,7 @@ esp_err_t mqtt_client_init(const mqtt_config_t *config) {
         .password = mqtt_config.password,
         .client_id = mqtt_config.client_id,
         .keepalive = mqtt_config.keepalive,
-        .clean_session = mqtt_config.clean_session,
+        .disable_clean_session = !mqtt_config.clean_session,
         .disable_auto_reconnect = false,
     };
     
@@ -300,7 +301,7 @@ esp_err_t mqtt_client_set_config(const mqtt_config_t *config) {
         .password = mqtt_config.password,
         .client_id = mqtt_config.client_id,
         .keepalive = mqtt_config.keepalive,
-        .clean_session = mqtt_config.clean_session,
+        .disable_clean_session = !mqtt_config.clean_session,
         .disable_auto_reconnect = false,
     };
     
