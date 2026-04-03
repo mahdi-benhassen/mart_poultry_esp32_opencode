@@ -93,7 +93,7 @@ esp_err_t climate_control_update(const sensor_data_t *sensor_data,
         }
         // Temperature too low - increase heating
         else if (sensor_data->temperature < climate_config.temp_setpoint - climate_config.temp_tolerance) {
-            actuator_states->heater_power = (uint8_t)(100 - temp_output);
+            actuator_states->heater_power = (uint8_t)temp_output;
             actuator_states->exhaust_fan_speed = 20; // Minimum ventilation
             actuator_states->inlet_fan_speed = 10;
         }

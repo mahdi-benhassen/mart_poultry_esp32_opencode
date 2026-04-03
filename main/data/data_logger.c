@@ -131,9 +131,10 @@ esp_err_t data_logger_get_entries_range(uint32_t start_time, uint32_t end_time,
     
     size_t found = 0;
     for (size_t i = 0; i < log_count && found < max_count; i++) {
-        if (log_entries[i].timestamp >= start_time && 
-            log_entries[i].timestamp <= end_time) {
-            memcpy(&entries[found], &log_entries[i], sizeof(log_entry_t));
+        size_t idx = (write_index + i) % MAX_LOG_ENTRIES;
+        if (log_entries[idx].timestamp >= start_time && 
+            log_entries[idx].timestamp <= end_time) {
+            memcpy(&entries[found], &log_entries[idx], sizeof(log_entry_t));
             found++;
         }
     }
@@ -218,9 +219,11 @@ esp_err_t data_logger_export_csv(char *buffer, size_t max_len, size_t *length) {
 
 esp_err_t data_logger_deinit(void) {
     if (initialized) {
-        // Save remaining entries to NVS
-        nvs_set_blob(nvs_handle, "logs", log_entries, log_count * sizeof(log_entry_t));
-        nvs_commit(nvs_handle);
+        size_t save_size = log_count * sizeof(log_entry_t);
+        if (save_size <= 0x3000) {
+            nvs_set_blob(nvs_handle, "logs", log_entries, save_size);
+            nvs_commit(nvs_handle);
+        }
         
         nvs_close(nvs_handle);
         initialized = false;

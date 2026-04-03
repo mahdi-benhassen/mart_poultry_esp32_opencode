@@ -14,8 +14,8 @@ static const char *TAG = "ACTUATOR_MGR";
 static actuator_states_t current_states = {0};
 static bool initialized = false;
 
-static uint8_t last_exhaust_fan_speed = 0;
-static uint8_t last_inlet_fan_speed = 0;
+static fan_instance_t exhaust_fan_inst = {0};
+static fan_instance_t inlet_fan_inst = {0};
 
 static uint8_t clamp_u8(uint8_t value, uint8_t min, uint8_t max) {
     if (value < min) return min;
@@ -37,7 +37,7 @@ esp_err_t actuator_manager_init(void) {
         .pwm_resolution = PWM_RESOLUTION,
         .inverted = false
     };
-    ret = fan_control_init(&exhaust_fan_config);
+    ret = fan_control_init(&exhaust_fan_inst, &exhaust_fan_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize exhaust fan");
         if (first_error == ESP_OK) first_error = ret;
@@ -53,7 +53,7 @@ esp_err_t actuator_manager_init(void) {
         .pwm_resolution = PWM_RESOLUTION,
         .inverted = false
     };
-    ret = fan_control_init(&inlet_fan_config);
+    ret = fan_control_init(&inlet_fan_inst, &inlet_fan_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize inlet fan");
         if (first_error == ESP_OK) first_error = ret;
@@ -197,12 +197,12 @@ esp_err_t actuator_manager_set_states(const actuator_states_t *states) {
     
     esp_err_t ret;
     
-    ret = fan_control_set_speed(validated_states.exhaust_fan_speed);
+    ret = fan_control_set_speed(&exhaust_fan_inst, validated_states.exhaust_fan_speed);
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Failed to set exhaust fan speed");
     }
     
-    ret = fan_control_set_speed(validated_states.inlet_fan_speed);
+    ret = fan_control_set_speed(&inlet_fan_inst, validated_states.inlet_fan_speed);
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Failed to set inlet fan speed");
     }
@@ -248,8 +248,8 @@ esp_err_t actuator_manager_get_states(actuator_states_t *states) {
         return ESP_ERR_INVALID_STATE;
     }
     
-    current_states.exhaust_fan_speed = last_exhaust_fan_speed;
-    current_states.inlet_fan_speed = last_inlet_fan_speed;
+    current_states.exhaust_fan_speed = fan_control_get_speed(&exhaust_fan_inst);
+    current_states.inlet_fan_speed = fan_control_get_speed(&inlet_fan_inst);
     current_states.heater_power = heater_control_get_power();
     current_states.feeder_speed = feeder_control_get_speed();
     current_states.water_pump_state = water_pump_is_running() ? 1 : 0;
@@ -268,8 +268,7 @@ esp_err_t actuator_manager_set_exhaust_fan(uint8_t speed) {
     }
     uint8_t clamped_speed = clamp_u8(speed, 0, 100);
     current_states.exhaust_fan_speed = clamped_speed;
-    last_exhaust_fan_speed = clamped_speed;
-    return fan_control_set_speed(clamped_speed);
+    return fan_control_set_speed(&exhaust_fan_inst, clamped_speed);
 }
 
 esp_err_t actuator_manager_set_inlet_fan(uint8_t speed) {
@@ -278,8 +277,7 @@ esp_err_t actuator_manager_set_inlet_fan(uint8_t speed) {
     }
     uint8_t clamped_speed = clamp_u8(speed, 0, 100);
     current_states.inlet_fan_speed = clamped_speed;
-    last_inlet_fan_speed = clamped_speed;
-    return fan_control_set_speed(clamped_speed);
+    return fan_control_set_speed(&inlet_fan_inst, clamped_speed);
 }
 
 esp_err_t actuator_manager_set_heater(uint8_t power) {
@@ -347,7 +345,8 @@ esp_err_t actuator_manager_emergency_stop(void) {
     
     ESP_LOGW(TAG, "Emergency stop activated!");
     
-    fan_control_off();
+    fan_control_off(&exhaust_fan_inst);
+    fan_control_off(&inlet_fan_inst);
     heater_control_off();
     feeder_control_stop();
     water_pump_off();
@@ -363,7 +362,8 @@ esp_err_t actuator_manager_emergency_stop(void) {
 
 esp_err_t actuator_manager_deinit(void) {
     if (initialized) {
-        fan_control_deinit();
+        fan_control_deinit(&exhaust_fan_inst);
+        fan_control_deinit(&inlet_fan_inst);
         heater_control_deinit();
         feeder_control_deinit();
         water_pump_deinit();

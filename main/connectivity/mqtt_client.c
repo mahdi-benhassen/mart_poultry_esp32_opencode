@@ -66,9 +66,6 @@ esp_err_t mqtt_client_init(const mqtt_config_t *config) {
     if (mqtt_config.keepalive == 0) {
         mqtt_config.keepalive = MQTT_KEEPALIVE;
     }
-    if (mqtt_config.qos == 0) {
-        mqtt_config.qos = MQTT_QOS;
-    }
     
     // Configure MQTT client
     esp_mqtt_client_config_t mqtt_cfg = {

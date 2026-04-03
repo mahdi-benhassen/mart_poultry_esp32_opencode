@@ -39,7 +39,10 @@ static esp_err_t dht22_read_raw(uint8_t data[5]) {
     // Check minimum interval
     uint64_t now = esp_timer_get_time();
     if ((now - last_read_time) < DHT22_MIN_INTERVAL_US) {
-        vTaskDelay(pdMS_TO_TICKS(2000 - (now - last_read_time) / 1000));
+        uint32_t elapsed_ms = (now - last_read_time) / 1000;
+    if (elapsed_ms < 2000) {
+        vTaskDelay(pdMS_TO_TICKS(2000 - elapsed_ms));
+    }
     }
     
     // Send start signal

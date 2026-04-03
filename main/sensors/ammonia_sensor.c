@@ -112,7 +112,13 @@ esp_err_t ammonia_sensor_read(float *ppm) {
     // For ammonia: Rs/R0 = (voltage / (3300 - voltage)) * (3300 / 1000)
     // Simplified linear approximation for 0-100 PPM range
     
-    float rs_ro_ratio = (3300.0f - voltage) / voltage;
+    float rs_ro_ratio = 0.0f;
+    if (voltage > 0 && voltage < 3300.0f) {
+        rs_ro_ratio = (3300.0f - voltage) / voltage;
+    } else {
+        *ppm = 0;
+        return ESP_OK;
+    }
     float raw_ppm = 0.0f;
     
     // MQ-137 characteristic curve approximation
