@@ -1,7 +1,7 @@
 #include "gas_leak_detector.h"
 #include "../actuators/buzzer_control.h"
 #include "../actuators/actuator_manager.h"
-#include "../connectivity/mqtt_client.h"
+#include "../connectivity/poultry_mqtt.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include <string.h>

@@ -10,7 +10,7 @@
 #include "control/alert_system.h"
 #include "control/gas_leak_detector.h"
 #include "connectivity/wifi_manager.h"
-#include "connectivity/mqtt_client.h"
+#include "connectivity/poultry_mqtt.h"
 #include "connectivity/web_server.h"
 #include "data/data_logger.h"
 #include "esp_log.h"

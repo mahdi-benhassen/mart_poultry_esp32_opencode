@@ -24,7 +24,7 @@ idf_component_register(
         "control/alert_system.c"
         "control/gas_leak_detector.c"
         "connectivity/wifi_manager.c"
-        "connectivity/mqtt_client.c"
+        "connectivity/poultry_mqtt.c"
         "connectivity/web_server.c"
         "data/data_logger.c"
     INCLUDE_DIRS 

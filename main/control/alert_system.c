@@ -2,7 +2,7 @@
 #include "../actuators/actuator_manager.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "../connectivity/mqtt_client.h"
+#include "../connectivity/poultry_mqtt.h"
 #include <string.h>
 #include <stdio.h>
 static const char *TAG = "ALERT_SYSTEM";

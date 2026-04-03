@@ -1,8 +1,10 @@
-#ifndef MQTT_CLIENT_H
-#define MQTT_CLIENT_H
+#ifndef POULTRY_MQTT_H
+#define POULTRY_MQTT_H
 
 #include "esp_err.h"
 #include <mqtt_client.h>
+#include "../include/poultry_system_config.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,4 +152,4 @@ esp_err_t mqtt_client_deinit(void);
 }
 #endif
 
-#endif // MQTT_CLIENT_H
+#endif // POULTRY_MQTT_H
