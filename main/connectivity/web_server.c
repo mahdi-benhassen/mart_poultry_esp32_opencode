@@ -1,5 +1,6 @@
 #include "web_server.h"
 #include "app_main.h"
+#include "../actuators/actuator_manager.h"
 #include "esp_log.h"
 #include "esp_http_server.h"
 #include "esp_timer.h"
@@ -325,7 +326,6 @@ static esp_err_t status_get_handler(httpd_req_t *req) {
 }
 
 static esp_err_t alarm_toggle_handler(httpd_req_t *req) {
-    extern esp_err_t actuator_manager_set_alarm(bool state);
     static bool alarm_state = false;
     alarm_state = !alarm_state;
     actuator_manager_set_alarm(alarm_state);
@@ -339,7 +339,6 @@ static esp_err_t alarm_toggle_handler(httpd_req_t *req) {
 }
 
 static esp_err_t emergency_stop_handler(httpd_req_t *req) {
-    extern esp_err_t actuator_manager_emergency_stop(void);
     actuator_manager_emergency_stop();
     
     const char *response = "{\"status\":\"ok\",\"message\":\"Emergency stop executed\"}";

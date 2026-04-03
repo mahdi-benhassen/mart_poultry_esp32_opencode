@@ -191,9 +191,10 @@ esp_err_t data_logger_export_csv(char *buffer, size_t max_len, size_t *length) {
                        "Water_Level,Feed_Level,Exhaust_Fan,Inlet_Fan,"
                        "Heater,Feeder,Lighting,Ventilation,Alert\n");
     
-    // Write log entries
+    // Write log entries in chronological order from ring buffer
     for (size_t i = 0; i < log_count && offset < max_len - 100; i++) {
-        log_entry_t *entry = &log_entries[i];
+        size_t idx = (write_index + i) % MAX_LOG_ENTRIES;
+        log_entry_t *entry = &log_entries[idx];
         offset += snprintf(buffer + offset, max_len - offset,
                           "%u,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%u,%u,%u,%u,%u,%u,%d\n",
                           entry->timestamp,

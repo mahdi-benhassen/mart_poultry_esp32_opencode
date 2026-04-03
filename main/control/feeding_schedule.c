@@ -9,6 +9,7 @@ static const char *TAG = "FEEDING_SCHED";
 static uint8_t feeding_schedule[24] = {0};
 static bool schedule_enabled = true;
 static bool initialized = false;
+static int last_triggered_hour = -1;
 
 esp_err_t feeding_schedule_init(void) {
     // Initialize with default feeding schedule
@@ -95,12 +96,16 @@ bool feeding_schedule_is_due(uint8_t current_hour, uint8_t current_minute,
         return false;
     }
     
-    // Check if feeding is due (at the start of each hour)
-    if (current_minute == 0 && feeding_schedule[current_hour] > 0) {
+    if (current_minute == 0 && feeding_schedule[current_hour] > 0 && last_triggered_hour != current_hour) {
         if (amount_grams != NULL) {
             *amount_grams = feeding_schedule[current_hour];
         }
+        last_triggered_hour = current_hour;
         return true;
+    }
+    
+    if (current_minute != 0) {
+        last_triggered_hour = -1;
     }
     
     return false;

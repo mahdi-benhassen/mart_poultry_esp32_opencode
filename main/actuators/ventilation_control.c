@@ -85,7 +85,8 @@ esp_err_t ventilation_control_set_position(uint8_t position) {
     // Calculate duty cycle for 16-bit resolution at 50Hz
     // Period = 20ms = 20000us
     // Duty = (pulse_us / 20000) * 65536
-    uint32_t duty = (pulse_us * 65536) / 20000;
+    uint32_t period_us = 1000000 / vent_config.pwm_frequency;
+    uint32_t duty = (pulse_us * 65536) / period_us;
     
     // Set duty cycle
     esp_err_t ret = ledc_set_duty(LEDC_LOW_SPEED_MODE, vent_config.pwm_channel, duty);

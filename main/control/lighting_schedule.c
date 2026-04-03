@@ -8,6 +8,7 @@ static const char *TAG = "LIGHTING_SCHED";
 static uint8_t lighting_schedule[24] = {0};
 static bool schedule_enabled = true;
 static bool initialized = false;
+static int last_triggered_hour = -1;
 
 esp_err_t lighting_schedule_init(void) {
     // Initialize with default lighting schedule
@@ -107,12 +108,16 @@ bool lighting_schedule_is_due(uint8_t current_hour, uint8_t current_minute,
         return false;
     }
     
-    // Check if lighting change is due (at the start of each hour)
-    if (current_minute == 0) {
+    if (current_minute == 0 && last_triggered_hour != current_hour) {
         if (intensity != NULL) {
             *intensity = lighting_schedule[current_hour];
         }
+        last_triggered_hour = current_hour;
         return true;
+    }
+    
+    if (current_minute != 0) {
+        last_triggered_hour = -1;
     }
     
     return false;

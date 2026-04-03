@@ -5,6 +5,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 // System Version
 #define SYSTEM_VERSION "1.0.0"

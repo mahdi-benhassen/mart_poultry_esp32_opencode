@@ -17,6 +17,7 @@ static TaskHandle_t buzzer_task_handle = NULL;
  */
 static void buzzer_pattern_task(void *pvParameters) {
     ESP_LOGI(TAG, "Buzzer pattern task started");
+    TaskHandle_t self = xTaskGetCurrentTaskHandle();
     
     while (buzzer_state.is_active) {
         // Check if duration has expired
@@ -96,7 +97,7 @@ static void buzzer_pattern_task(void *pvParameters) {
     
     ESP_LOGI(TAG, "Buzzer pattern task ended");
     buzzer_task_handle = NULL;
-    vTaskDelete(NULL);
+    vTaskDelete(self);
 }
 
 static void buzzer_alarm_stop_internal(void) {

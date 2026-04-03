@@ -76,11 +76,11 @@ esp_err_t heater_control_set_power(uint8_t power) {
     }
     
     // Calculate duty cycle
-    uint32_t duty = (power * PWM_MAX_DUTY) / 100;
+    uint32_t max_duty = (1 << 10) - 1;
+    uint32_t duty = (power * max_duty) / 100;
     
-    // Invert if configured
     if (heater_config.inverted) {
-        duty = PWM_MAX_DUTY - duty;
+        duty = max_duty - duty;
     }
     
     // Set duty cycle

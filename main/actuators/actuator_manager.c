@@ -81,7 +81,7 @@ esp_err_t actuator_manager_init(void) {
     feeder_config_t feeder_cfg = {
         .gpio_num = FEEDER_MOTOR_GPIO,
         .pwm_channel = FEEDER_PWM_CHANNEL,
-        .pwm_timer = LEDC_TIMER_1,
+        .pwm_timer = LEDC_TIMER_3,
         .pwm_frequency = PWM_FREQUENCY,
         .pwm_resolution = PWM_RESOLUTION,
         .inverted = false,

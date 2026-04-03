@@ -112,10 +112,11 @@ esp_err_t climate_control_update(const sensor_data_t *sensor_data,
         
         // Humidity too high - increase ventilation
         if (sensor_data->humidity > climate_config.humidity_setpoint + climate_config.humidity_tolerance) {
-            actuator_states->exhaust_fan_speed = (uint8_t)(actuator_states->exhaust_fan_speed + humidity_output * 0.5f);
-            actuator_states->inlet_fan_speed = (uint8_t)(actuator_states->inlet_fan_speed + humidity_output * 0.3f);
+            int exhaust = actuator_states->exhaust_fan_speed + (int)(humidity_output * 0.5f);
+            int inlet = actuator_states->inlet_fan_speed + (int)(humidity_output * 0.3f);
+            actuator_states->exhaust_fan_speed = (uint8_t)(exhaust > 100 ? 100 : exhaust);
+            actuator_states->inlet_fan_speed = (uint8_t)(inlet > 100 ? 100 : inlet);
         }
-        // Humidity too low - decrease ventilation
         else if (sensor_data->humidity < climate_config.humidity_setpoint - climate_config.humidity_tolerance) {
             actuator_states->exhaust_fan_speed = (uint8_t)(actuator_states->exhaust_fan_speed * 0.7f);
             actuator_states->inlet_fan_speed = (uint8_t)(actuator_states->inlet_fan_speed * 0.5f);
@@ -127,7 +128,6 @@ esp_err_t climate_control_update(const sensor_data_t *sensor_data,
         pid_controller_update(&ventilation_pid_state, &ventilation_pid_config, 
                             sensor_data->ammonia_ppm, &ventilation_output);
         
-        // Ammonia too high - emergency ventilation
         if (sensor_data->ammonia_ppm > climate_config.ammonia_limit) {
             actuator_states->exhaust_fan_speed = 100;
             actuator_states->inlet_fan_speed = 100;
@@ -135,18 +135,21 @@ esp_err_t climate_control_update(const sensor_data_t *sensor_data,
             actuator_states->alarm_state = true;
             ESP_LOGW(TAG, "Ammonia level critical: %.1f ppm", sensor_data->ammonia_ppm);
         }
-        // Ammonia warning level
         else if (sensor_data->ammonia_ppm > climate_config.ammonia_limit * 0.8f) {
-            actuator_states->exhaust_fan_speed = (uint8_t)(actuator_states->exhaust_fan_speed + ventilation_output * 0.7f);
-            actuator_states->inlet_fan_speed = (uint8_t)(actuator_states->inlet_fan_speed + ventilation_output * 0.5f);
+            int exhaust = actuator_states->exhaust_fan_speed + (int)(ventilation_output * 0.7f);
+            int inlet = actuator_states->inlet_fan_speed + (int)(ventilation_output * 0.5f);
+            actuator_states->exhaust_fan_speed = (uint8_t)(exhaust > 100 ? 100 : exhaust);
+            actuator_states->inlet_fan_speed = (uint8_t)(inlet > 100 ? 100 : inlet);
             actuator_states->ventilation_position = (uint8_t)ventilation_output;
         }
     }
     
     // CO2 control
     if (sensor_data->co2_ppm > climate_config.co2_limit) {
-        actuator_states->exhaust_fan_speed = (uint8_t)(actuator_states->exhaust_fan_speed + 30);
-        actuator_states->inlet_fan_speed = (uint8_t)(actuator_states->inlet_fan_speed + 20);
+        int exhaust = actuator_states->exhaust_fan_speed + 30;
+        int inlet = actuator_states->inlet_fan_speed + 20;
+        actuator_states->exhaust_fan_speed = (uint8_t)(exhaust > 100 ? 100 : exhaust);
+        actuator_states->inlet_fan_speed = (uint8_t)(inlet > 100 ? 100 : inlet);
         ESP_LOGW(TAG, "CO2 level high: %.1f ppm", sensor_data->co2_ppm);
     }
     
